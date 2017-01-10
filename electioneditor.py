@@ -5,12 +5,6 @@ from math import pow
 from time import sleep
 
 
-OUTPUT = 1
-INPUT = 0
-INPUT_PULLUP = 2
-HIGH = 1
-LOW = 0
-
 DEBUG_LEDs = True
 DEBUG_Remote = True
 
@@ -102,6 +96,14 @@ def processCompensations():
 
 
 
+
+OUTPUT = 1
+INPUT = 0
+INPUT_PULLUP = 2
+HIGH = 1
+LOW = 0
+
+
 remoteDigitalPins =  [{"value": LOW,"mode": INPUT,"changed": 0,"watched": 0} for k in range(25)]
 remoteAnalogPins =  [{"value": LOW,"mode": INPUT,"changed": 0,"watched": 0} for k in range(25)]
 (A0, A1, A2, A3, A4, A5, A6, A7) = range(14,22)
@@ -109,7 +111,7 @@ remoteEncoder = 0
 remoteLEDs =  [[0,0,0] for k in range(40)]
 
 
-port = "/dev/tty.SLAB_USBtoUART"
+port = "/dev/ttyUSB0"
 ser = serial.Serial(port,115200,timeout=None,write_timeout=None)
 print(str(ser.get_settings()))
 
@@ -194,11 +196,13 @@ def remoteRead ():
         print("Remote client timed out waiting for us")
 
     elif (command=='.'):
-        print("LED updated")
+        if DEBUG_LEDs:
+            print("LED updated")
 
     elif (command=='b'):
         values = getBytes(1)
-        print("LED brightness now " + str(values[0]))
+        if DEBUG_LEDs:
+            print("LED brightness now " + str(values[0]))
 
     elif (command=='?'):
         print("Remote client did not understand message")
@@ -213,11 +217,13 @@ def remoteRead ():
 
     elif (command=='M'):
         values = getBytes(1)
-        print ("Pin monitoring enabled for " + str(ord(values[0])))
+        if DEBUG_Remote:
+            print ("Pin monitoring enabled for " + str(ord(values[0])))
 
     elif (command=='m'):
         values = getBytes(1)
-        print ("Pin monitoring disabled for " + str(ord(values[0])))
+        if DEBUG_Remote:
+            print ("Pin monitoring disabled for " + str(ord(values[0])))
 
     elif (command=='P'):
         values = getBytes(2)
@@ -374,18 +380,16 @@ def translate(value, leftMin, leftMax, rightMin, rightMax):
     # Figure out how 'wide' each range is
     leftSpan = leftMax - leftMin
     rightSpan = rightMax - rightMin
-
     if (value < leftMin):
         value = leftMin
-
     if (value > leftMax):
         value = leftMax
-
     # Convert the left range into a 0-1 range (float)
     valueScaled = float(value - leftMin) / float(leftSpan)
-
     # Convert the 0-1 range into a value in the right range.
     return rightMin + (valueScaled * rightSpan)
+
+
 
 time.sleep(2)
 remoteInitializePins()
@@ -447,7 +451,6 @@ while True:
         print ("riggedElection parsed to " + str(sensorValues["riggedElection"]))
         changed=True
 
-
     if (remoteAnalogPins[0]["changed"] == True):
         sensorValues["voterAge"] = translate(remoteAnalogPins[0]["value"],472,550,0,1)
         # print("pin A0 is now " + str(remoteAnalogPins[0]["value"]))
@@ -484,5 +487,7 @@ while True:
             color = [random.randint(0,120),random.randint(0,120),random.randint(0,120)]
             # print(str(a) + " to " + str(color))
             remoteLED(a,color[0],color[1],color[2])
-        # time.sleep(1/60)
+            time.sleep(1/200)
+
+
     time.sleep(2)
