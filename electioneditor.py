@@ -1,12 +1,13 @@
 from __future__ import print_function
 
-import serial, time, random, math
+import serial, time, random, math, os
 from math import pow
 from time import sleep
 
 
 DEBUG_LEDs = True
-DEBUG_Remote = True
+# DEBUG_Remote = True
+DEBUG_Remote = False
 
 years=range(2008,2024,2)
 
@@ -112,9 +113,11 @@ remoteLEDs =  [[0,0,0] for k in range(40)]
 
 
 port = "/dev/ttyUSB0"
-ser = serial.Serial(port,115200,timeout=None,write_timeout=None)
+if (os.path.exists("/dev/tty.SLAB_USBtoUART")):
+    port = "/dev/tty.SLAB_USBtoUART"
+ser = serial.Serial(port,115200,timeout=10,write_timeout=None)
 print(str(ser.get_settings()))
-
+time.sleep(2)
 
 def remoteWrite(*values):
 
@@ -146,10 +149,12 @@ def remoteWrite(*values):
     if DEBUG_Remote:
         print(" ")
         print("waiting for response", end="")
-    while (ser.in_waiting is 0):
-        sleep(0.0001)
+    max = 0
+    while (ser.in_waiting is 0 and max < 2000):
+        sleep(0.001)
         if DEBUG_Remote:
             print('.', end="")
+        max = max + 1
     if DEBUG_Remote:
         print(" ")
 
@@ -157,7 +162,6 @@ def remoteWrite(*values):
     # ser.flush()
     while ser.in_waiting:
         remoteRead()
-
 
 def remoteDigitalRead (pin, cached=False):
     remoteDigitalPins[pin]["changed"]=False
@@ -346,13 +350,18 @@ def remoteStopMonitoringDigitalPin(pin):
     remoteWrite('m', chr(pin))
 
 def remoteLED(led,red,green,blue):
+
     remoteLEDs[led]=[red,green,blue]
+    if (led > 19):
+        red = int(red / 3)
+        green = int(green / 3)
+        blue = int(blue / 3)
     remoteWrite('l',chr(led),chr(red),chr(green),chr(blue))
     time.sleep(0.001)
 
 def remoteLEDBrightness(brightness):
     remoteWrite('b',chr(brightness))
-    time.sleep(0.005)
+    time.sleep(0.001)
 
 def remoteInitializePins():
     remotePinMode(5,OUTPUT)
@@ -392,12 +401,12 @@ def translate(value, leftMin, leftMax, rightMin, rightMax):
 
 
 time.sleep(2)
-remoteInitializePins()
+# remoteInitializePins()
 doSensorCompensation()
 processCompensations()
 print(str(compensation))
 
-print(remoteAnalogRead(3))
+# print(remoteAnalogRead(3))
 
 
 
@@ -487,7 +496,7 @@ while True:
             color = [random.randint(0,120),random.randint(0,120),random.randint(0,120)]
             # print(str(a) + " to " + str(color))
             remoteLED(a,color[0],color[1],color[2])
-            time.sleep(1/200)
+            # time.sleep(1/200)
 
 
     time.sleep(2)
