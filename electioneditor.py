@@ -3,9 +3,11 @@ from __future__ import print_function
 import serial, time, random, math, os
 from math import pow
 from time import sleep
+import numpy as numpy
 
+sysrand = random.SystemRandom()
 
-DEBUG_LEDs = True
+DEBUG_LEDs = False
 # DEBUG_Remote = True
 DEBUG_Remote = False
 
@@ -13,7 +15,7 @@ years=range(2008,2024,2)
 
 sensorValues={"economyStrength":0.5,"politicalSpending":0.5,"voterFraud":0.5,"lies":0.5,"voterAge":0.5,"voterApathy":0.5,"voterGender":0.5, "climateChange":0,"riggedElection":0, "mediaBias": 0.5}
 
-compensations={"altright":[ [0.0, 1] ], "right":[ [1.0, 1] ], "independent":[ [0.1, 1] ], "left":[ [1.0, 1] ], "altleft":[ [0, 1] ], "libertarian":[ [0.2, 1] ], "green":[ [0.1, 1] ] }
+compensations={"altright":[ [0.0, 1] ], "right":[ [1.0, 1] ], "independent":[ [0.1, 1] ], "left":[ [1.0, 1] ], "altleft":[ [0, 1] ], "libertarian":[ [0.2, 1] ], "green":[ [0.1, 1] ]  }
 compensation={}
 
 
@@ -22,11 +24,23 @@ elections[2008]={"eligibleVoters": 229945, "votes": {"president": {"right": 5995
 elections[2010]={"eligibleVoters": int(229945*pow(1.023062037,0.5)), "votes": {}, "races": ["governor2","congress2"]}
 elections[2012]={"eligibleVoters": 235248, "votes": {"president": {"right": 60934407 , "left": 65918507 , "independent": 1275923 + 469015 }}, "races": ["president","governor1","congress1"]}
 elections[2014]={"eligibleVoters": int(235248*pow(1.067413963,0.5)),"votes": {}, "races": ["governor2","congress2"]}
-elections[2016]={"eligibleVoters": 251107, "votes": {"president": {"right": 62235228, "left": 64434101, "independent": 559568 + 1395217 + 4418051}}, "races": ["president","governor1","congress1"]}
+elections[2016]={"eligibleVoters": 251107, "votes": {"president": {"right": 62979879, "left": 65844954, "independent": 559568 + 1395217 + 4418051}}, "races": ["president","governor1","congress1"]}
 elections[2018]={"eligibleVoters": int(251107*pow(1.067413963,0.5)),"votes": {}, "races": ["governor2","congress2"]}
 elections[2020]={"eligibleVoters": int(251107*1.067413963), "votes": {}, "races": ["president","governor1","congress1"]}
 elections[2022]={"eligibleVoters": int(251107*pow(1.067413963,1.5)),"votes": {}, "races": ["governor2","congress2"]}
 elections[2024]={"eligibleVoters": int(251107*pow(1.067413963,2)), "votes": {}, "races": ["president","governor1","congress1"]}
+
+colors = { "left": [ 0, 174, 243 ], "right": [ 200, 69, 52 ], "libertarian": [ 244, 210, 80 ], "green" : [ 130, 166, 59 ] , "altright" : [ 224, 90, 61 ], "independent" : [ 127, 127, 127 ], "altleft" : [ 59, 111, 243 ] }
+
+leds = {}
+
+leds[0] = { "president": 19, "popularVote": 20, "electoralVote" : 29, "congress" : 10, "house": 30, "senate" : 39, "supremeCourt" : 9, "governors": 0 } ;
+leds[1] = { "president": 18, "popularVote": 21, "electoralVote" : 28, "congress" : 11, "house": 31, "senate" : 38, "supremeCourt" : 8, "governors": 1 } ;
+leds[2] = { "president": 17, "popularVote": 22, "electoralVote" : 27, "congress" : 12, "house": 32, "senate" : 37, "supremeCourt" : 7, "governors": 2 } ;
+leds[3] = { "president": 16, "popularVote": 23, "electoralVote" : 26, "congress" : 13, "house": 33, "senate" : 36, "supremeCourt" : 6, "governors": 3 } ;
+leds[4] = { "president": 15, "popularVote": 24, "electoralVote" : 25, "congress" : 14, "house": 34, "senate" : 35, "supremeCourt" : 5, "governors": 4 } ;
+
+displayMappings = { 2016: 0, 2018: 1, 2020: 2, 2022: 3, 2024: 4 }
 
 print (str(elections))
 def doElectionCompensation(year):
@@ -84,6 +98,8 @@ def doSensorCompensation():
 
 def getElectionContext(year):
     index = years.index(year)
+    previousYear = years[index-1]
+
 
 def processCompensations():
 
@@ -95,8 +111,30 @@ def processCompensations():
             divisor = divisor + factor[1]
         compensation[party] = total / divisor
 
+def generateElection(year):
+    return
 
+# leds[0] = { "president": 19, "popularVote": 20, "electoralVote" : 29, "congress" : 10, "house": 30, "senate" : 39, "supremeCourt" : 9, "governors": 0 } ;
+# elections[2008]={"eligibleVoters": 229945, "votes": {"president": {"right": 59950323, "left": 69499428, "independent": (739278 + 523433) }}, "races": ["president","governor1","congress1"]}
 
+def displayElection(year):
+    global colors
+    global elections
+    global displayMappings
+    display = displayMappings[year]
+    remoteSevenSegment(display,year)
+    election = elections[year]
+    # for race in elections["races"]:
+        # getWinningParty(election,race)
+    race="president"
+    party = getWinningParty(election,race)
+    color = colors[party]
+    ledIndex = leds[display][race]
+    # print(color)
+    remoteLED(ledIndex,color[0],color[1],color[2])
+
+def getWinningParty(election,race):
+    return "left"
 
 OUTPUT = 1
 INPUT = 0
@@ -115,7 +153,8 @@ remoteLEDs =  [[0,0,0] for k in range(40)]
 port = "/dev/ttyUSB0"
 if (os.path.exists("/dev/tty.SLAB_USBtoUART")):
     port = "/dev/tty.SLAB_USBtoUART"
-ser = serial.Serial(port,115200,timeout=10,write_timeout=None)
+# timeout=None,write_timeout=None
+ser = serial.Serial(port,115200)
 print(str(ser.get_settings()))
 time.sleep(2)
 
@@ -128,7 +167,27 @@ def remoteWrite(*values):
     #     time.sleep(0.0001)
     theBytes = bytearray(values)
     # print(theBytes)
-    ser.write(theBytes)
+
+    # if DEBUG_Remote:
+    #     print("waiting for flush", end="")
+    # while (ser.out_waiting):
+    #     sleep(0.0001)
+    #     if DEBUG_Remote:
+    #         print('.', end="")
+    # if DEBUG_Remote:
+    #     print(' ')
+
+    written = 0
+    for i in range(len(theBytes)):
+        written = written + ser.write(bytearray([theBytes[i]]))
+    if DEBUG_Remote:
+        print("Wrote ",written, " bytes")
+        print("This many bytes waiting: ",ser.out_waiting)
+
+    # while (ser.out_waiting):
+    #     sleep(0.0001)
+    #     if DEBUG_Remote:
+    #         print('.', end="")
     # for value in values:
     #     print (value)
     #     print (type(value))
@@ -139,17 +198,12 @@ def remoteWrite(*values):
     #          print(chr(value))
     #     else:
     #         ser.write(value)
-    if DEBUG_Remote:
-        print("waiting for flush", end="")
-    sleep(0.0005)
-    while (ser.out_waiting):
-        sleep(0.0001)
-        if DEBUG_Remote:
-            print('.', end="")
+    # ser.flush()
     if DEBUG_Remote:
         print(" ")
         print("waiting for response", end="")
     max = 0
+    # sleep(0.01)
     while (ser.in_waiting is 0 and max < 2000):
         sleep(0.001)
         if DEBUG_Remote:
@@ -200,13 +254,13 @@ def remoteRead ():
         print("Remote client timed out waiting for us")
 
     elif (command=='.'):
-        if DEBUG_LEDs:
+        if DEBUG_Remote:
             print("LED updated")
 
     elif (command=='b'):
         values = getBytes(1)
         if DEBUG_LEDs:
-            print("LED brightness now " + str(values[0]))
+            print("LED brightness now " + formatRemoteValues(values[0]))
 
     elif (command=='?'):
         print("Remote client did not understand message")
@@ -357,11 +411,15 @@ def remoteLED(led,red,green,blue):
         green = int(green / 3)
         blue = int(blue / 3)
     remoteWrite('l',chr(led),chr(red),chr(green),chr(blue))
-    time.sleep(0.001)
+    # time.sleep(0.001)
 
 def remoteLEDBrightness(brightness):
     remoteWrite('b',chr(brightness))
-    time.sleep(0.001)
+    # time.sleep(0.001)
+
+def remoteSevenSegment(screen, value):
+    remoteWrite('#',chr(screen),str(int(value % 10000 / 1000)),str(int(value % 1000 /100)),str(int(value % 100 / 10)),str(int(value % 10)));
+
 
 def remoteInitializePins():
     remotePinMode(5,OUTPUT)
@@ -408,17 +466,46 @@ print(str(compensation))
 
 # print(remoteAnalogRead(3))
 
+for name, number in leds[0].items() :
+    remoteLED(number,0,0,255)
+for name, number in leds[1].items() :
+    remoteLED(number,0,255,255)
+for name, number in leds[2].items() :
+    remoteLED(number,0,255,0)
+for name, number in leds[3].items() :
+    remoteLED(number,255,255,0)
+for name, number in leds[4].items() :
+    remoteLED(number,255,0,0)
 
+# for name in leds[0].keys():
+#     for index in range(0,5):
+#         number = leds[index][name]
+#         color = remoteLEDs[number]
+#         remoteLED(number,color[0] / (index + 1 ),color[1] / (index + 1 ),color[2] / (index + 1 ))
 
 changed = False
+
+cycles = 1
+for number in range(0,40):
+    remoteLED(number,0,0,0)
+
+for year, display in displayMappings.items() :
+    remoteSevenSegment(display, year)
+
+
+starttime=time.time()
 
 while True:
     while ser.in_waiting:
         remoteRead()
-    # remoteAnalogRead(0)
-    # remoteAnalogRead(1)
-    # remoteAnalogRead(2)
-    # remoteAnalogRead(3)
+    remoteAnalogRead(0)
+    remoteAnalogRead(1)
+    remoteAnalogRead(2)
+    remoteAnalogRead(3)
+    remoteAnalogRead(4)
+    remoteAnalogRead(5)
+    remoteAnalogRead(6)
+    remoteAnalogRead(7)
     #
     # remoteDigitalRead(2)
     # remoteDigitalRead(7)
@@ -461,42 +548,78 @@ while True:
         changed=True
 
     if (remoteAnalogPins[0]["changed"] == True):
-        sensorValues["voterAge"] = translate(remoteAnalogPins[0]["value"],472,550,0,1)
+        remoteAnalogPins[0]["changed"] = False
+        sensorValues["voterAge"] = translate(remoteAnalogPins[0]["value"],0,1023,0,1)
         # print("pin A0 is now " + str(remoteAnalogPins[0]["value"]))
         print ("voter age raw value is now " + str(remoteAnalogPins[0]["value"]))
         changed=True
 
     if (remoteAnalogPins[1]["changed"] == True):
-        sensorValues["voterApathy"] = translate(remoteAnalogPins[1]["value"],472,550,0,1)
+        remoteAnalogPins[1]["changed"] = False
+        sensorValues["voterApathy"] = translate(remoteAnalogPins[1]["value"],0,1023,0,1)
         print("voter apathy raw value is now " + str(remoteAnalogPins[1]["value"]))
         changed=True
 
     if (remoteAnalogPins[2]["changed"] == True):
-        sensorValues["voterGender"] = translate(remoteAnalogPins[2]["value"],472,550,0,1)
+        remoteAnalogPins[2]["changed"] = False
+        sensorValues["voterGender"] = translate(remoteAnalogPins[2]["value"],0,1023,0,1)
         print("voter gender raw value is now " + str(remoteAnalogPins[2]["value"]))
         changed=True
 
-
     if (remoteAnalogPins[3]["changed"] == True):
         remoteAnalogPins[3]["changed"] = False
-        sensorValues["mediaBias"] = translate(remoteAnalogPins[3]["value"],507,551,0,1)
-        # Do something to de-log
+        sensorValues["mediaBias"] = translate(remoteAnalogPins[3]["value"],0,1023,0,1)
         print("media bias raw value is now " + str(remoteAnalogPins[3]["value"]))
+        changed=True
+
+    if (remoteAnalogPins[4]["changed"] == True):
+        remoteAnalogPins[4]["changed"] = False
+        sensorValues["economyStrength"] = translate(remoteAnalogPins[4]["value"],0,1023,0,1)
+        print("economy strength raw value is now " + str(remoteAnalogPins[4]["value"]))
+        changed=True
+
+    if (remoteAnalogPins[5]["changed"] == True):
+        remoteAnalogPins[5]["changed"] = False
+        sensorValues["politicalSpending"] = translate(remoteAnalogPins[5]["value"],0,1023,0,1)
+        print("political spending raw value is now " + str(remoteAnalogPins[5]["value"]))
+        changed=True
+
+    if (remoteAnalogPins[6]["changed"] == True):
+        remoteAnalogPins[6]["changed"] = False
+        sensorValues["voterFraud"] = translate(remoteAnalogPins[6]["value"],0,1023,0,1)
+        print("voter fraud raw value is now " + str(remoteAnalogPins[6]["value"]))
+        changed=True
+
+    if (remoteAnalogPins[7]["changed"] == True):
+        remoteAnalogPins[7]["changed"] = False
+        sensorValues["lies"] = translate(remoteAnalogPins[7]["value"],0,1023,0,1)
+        print("lies raw value is now " + str(remoteAnalogPins[7]["value"]))
         changed=True
 
     if (changed):
         changed=False
         doSensorCompensation()
         processCompensations()
+        for year in displayMappings.keys():
+            displayElection(year)
+
         print(str(compensation))
 
-    if (DEBUG_LEDs):
-        remoteLEDBrightness(random.randint(0,255))
+
+    while (DEBUG_LEDs):
+        # remoteLEDBrightness(random.randint(0,255))
         for a in range(40):
-            color = [random.randint(0,120),random.randint(0,120),random.randint(0,120)]
+            # color = [,random.randint(0,255),random.randint(0,255)]
             # print(str(a) + " to " + str(color))
+            color = numpy.random.random_integers(0,255,3)
+            # color = [ 255, 255, 255]
             remoteLED(a,color[0],color[1],color[2])
             # time.sleep(1/200)
+        for a in range(5):
+            remoteSevenSegment(a,random.randint(0,9999))
+        elapsed = time.time() - starttime
+        print("Frame ",cycles, ": Frames per second: ", cycles / elapsed)
+        cycles += 1
+    cycles += 1
 
-
-    time.sleep(2)
+    # time.sleep(2)
