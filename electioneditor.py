@@ -20,17 +20,74 @@ compensation={}
 
 
 elections = {}
-elections[2008]={"eligibleVoters": 229945, "votes": {"president": {"right": 59950323, "left": 69499428, "independent": (739278 + 523433) }}, "races": ["president","governor1","congress1"]}
-elections[2010]={"eligibleVoters": int(229945*pow(1.023062037,0.5)), "votes": {}, "races": ["governor2","congress2"]}
-elections[2012]={"eligibleVoters": 235248, "votes": {"president": {"right": 60934407 , "left": 65918507 , "independent": 1275923 + 469015 }}, "races": ["president","governor1","congress1"]}
-elections[2014]={"eligibleVoters": int(235248*pow(1.067413963,0.5)),"votes": {}, "races": ["governor2","congress2"]}
-elections[2016]={"eligibleVoters": 251107, "votes": {"president": {"right": 62979879, "left": 65844954, "independent": 559568 + 1395217 + 4418051}}, "races": ["president","governor1","congress1"]}
-elections[2018]={"eligibleVoters": int(251107*pow(1.067413963,0.5)),"votes": {}, "races": ["governor2","congress2"]}
-elections[2020]={"eligibleVoters": int(251107*1.067413963), "votes": {}, "races": ["president","governor1","congress1"]}
-elections[2022]={"eligibleVoters": int(251107*pow(1.067413963,1.5)),"votes": {}, "races": ["governor2","congress2"]}
-elections[2024]={"eligibleVoters": int(251107*pow(1.067413963,2)), "votes": {}, "races": ["president","governor1","congress1"]}
+elections[2008]={"eligibleVoters": 229945000,
+    "votes": {
+        "popularVote": {"right": 59950323, "left": 69499428, "independent": (739278 + 523433) },
+        "electoralVote": {"right": 173, "left": 365 },
+        # "governor1": {"left": 7, "right": 5}
+        "governor1": {"right": 21, "left": 29}
+    }, "races": ["president","governor1","congress1"]}
+elections[2010]={"eligibleVoters": int(229945000*pow(1.023062037,0.5)), "votes": {}, "races": ["governor2","congress2"]}
+elections[2012]={"eligibleVoters": 235248000,
+    "votes": {
+        "popularVote": {"right": 60934407 , "left": 65918507 , "independent": 1275923 + 469015 },
+        "electoralVote": {"right": 206 , "left": 332 },
+        # "governor1": {"left": 7, "right": 5}
+        "governor1": {"right": 30, "left": 19}
+        },
+    "races": ["president","governor1","congress1"]}
+elections[2014]={"eligibleVoters": int(235248000*pow(1.067413963,0.5)),"votes": {}, "races": ["governor2","congress2"]}
+elections[2016]={"eligibleVoters":
+    { "popularVote": 251107000,
+        "electoralVote": 538,
+        "governors": 50,
+        "supremeCourt": 8,
+        "house": 435,
+        "senate": 100
+    }, "votes":
+    {
+    "popularVote": {"right": 62979879, "left": 65844954, "independent": 559568 + 1395217 + 4418051},
+    "electoralVote": {"left": 232, "right": 306},
+    # "governor1": {"left": 8, "right": 4},
+    "governor1": {"right": 33, "left": 16},
+    "house": {"right": 241, "left": 194},
+    "senate": {"right": 52, "left": 46, "independent": 2},
+    "supremeCourt": {"right": 4, "left": 4}
+    }, "races": ["president","governor1","congress1","supremeCourt"]}
+elections[2018]={"eligibleVoters":
+    { "popularVote": int(251107000*pow(1.067413963,0.5)),
+        "electoralVote": 538,
+        "governors": 50,
+        "supremeCourt": 9,
+        "house": 435,
+        "senate": 100
+    },"votes": {}, "races": ["governor2","congress2"]}
+elections[2020]={"eligibleVoters":
+    { "popularVote": int(251107000*1.067413963),
+        "electoralVote": 538,
+        "governors": 50,
+        "supremeCourt": 9,
+        "house": 435,
+        "senate": 100
+    }, "votes": {}, "races": ["president","governor1","congress1"]}
+elections[2022]={"eligibleVoters": {
+    "popularVote": int(251107000*pow(1.067413963,1.5)),
+    "electoralVote": 538,
+    "governors": 50,
+    "supremeCourt": 9,
+    "house": 435,
+    "senate": 100
+    },"votes": {}, "races": ["governor2","congress2"]}
+elections[2024]={"eligibleVoters": {
+    "popularVote": int(251107000*pow(1.067413963,2)),
+    "electoralVote": 538,
+    "governors": 50,
+    "supremeCourt": 9,
+    "house": 435,
+    "senate": 100
+    }, "votes": {}, "races": ["president","governor1","congress1"]}
 
-colors = { "left": [ 0, 174, 243 ], "right": [ 200, 69, 52 ], "libertarian": [ 244, 210, 80 ], "green" : [ 130, 166, 59 ] , "altright" : [ 224, 90, 61 ], "independent" : [ 127, 127, 127 ], "altleft" : [ 59, 111, 243 ] }
+colors = { "left": [ 0, 174, 243 ], "right": [ 200, 69, 52 ], "libertarian": [ 244, 210, 80 ], "green" : [ 130, 166, 59 ] , "altright" : [ 224, 90, 61 ], "independent" : [ 127, 127, 127 ], "altleft" : [ 59, 111, 243 ], "nobody" : [ 0, 0, 0 ] }
 
 leds = {}
 
@@ -102,7 +159,7 @@ def getElectionContext(year):
 
 
 def processCompensations():
-
+    global compensation,compensations
     for party in compensations:
         total = 0
         divisor = 0
@@ -112,6 +169,29 @@ def processCompensations():
         compensation[party] = total / divisor
 
 def generateElection(year):
+    races=elections[year]["races"]
+    for race in races:
+
+        if race is "president":
+            races.extend(["popularVote","electoralVote"])
+            continue
+
+        if race is "congress" or race is "congress1" or race is "congress2":
+            races.extend(["house","senate"])
+            continue
+
+        if race in elections[year]["eligibleVoters"]:
+            pop = elections[year]["eligibleVoters"][race]
+            total=sum(compensation.values())
+            # print("Total voters in ",race,"is",pop)
+            elections[year]["votes"][race] = {}
+            for party in compensation.keys():
+                print("Compensation for",party,"is",compensation[party],"out of",total,"or",(compensation[party] / total)*100,"%")
+                elections[year]["votes"][race][party] = (compensation[party] / total) * pop
+        else:
+            print("couldn't find race",race,"in ",year,"races")
+    print("Here is",year)
+    print(elections[year]["votes"])
     return
 
 # leds[0] = { "president": 19, "popularVote": 20, "electoralVote" : 29, "congress" : 10, "house": 30, "senate" : 39, "supremeCourt" : 9, "governors": 0 } ;
@@ -124,17 +204,96 @@ def displayElection(year):
     display = displayMappings[year]
     remoteSevenSegment(display,year)
     election = elections[year]
-    # for race in elections["races"]:
-        # getWinningParty(election,race)
-    race="president"
-    party = getWinningParty(election,race)
-    color = colors[party]
-    ledIndex = leds[display][race]
-    # print(color)
-    remoteLED(ledIndex,color[0],color[1],color[2])
+    # print("election year ",year)
+    races = election["races"]
+    for race in races:
+        # print("Considering",race,"in",year)
+        if race is "president":
+            races.extend(["popularVote","electoralVote"])
+            continue
+
+        if race is "congress" or race is "congress1" or race is "congress2":
+            races.extend(["house","senate"])
+            house=getWinningParty(election,"house")
+            senate=getWinningParty(election,"senate")
+            color1=colors[house]
+            color2=colors[senate]
+            color=getPartyColor(house,senate)
+        else:
+            party = getWinningParty(election,race)
+            if party is "nobody":
+                print("no winner for race",race,"in year",year)
+            color = getPartyColor(party)
+
+
+        ledIndex = getLEDIndex(display,race)
+        remoteLED(ledIndex,color[0],color[1],color[2])
+
+        if race is "electoralVote":
+            ledIndex = getLEDIndex(display,"president")
+            remoteLED(ledIndex,color[0],color[1],color[2])
+
+
+def getPartyColor(*parties):
+    global colors
+    ourColors=[]
+    consider=[]
+
+    for party in parties:
+        if type(party)==list:
+            consider.extend(party)
+        elif party not in consider:
+            consider.extend([party])
+
+
+    for party in consider:
+        if party in colors.keys():
+            ourColors.append(colors[party])
+        else:
+            print("party",party,"not found in color table")
+    # print(ourColors)
+    if (len(ourColors) > 1):
+        print("multiple winners: ",consider)
+        # print(ourColors)
+        # print(averageColors(ourColors)[0])
+        return averageColors(ourColors)
+    return ourColors[0]
+
+def getLEDIndex(display,race):
+    if race is "governor1" or race is "governor2":
+        race="governors"
+    elif race is "congress1" or race is "congress2":
+        race="congress"
+    return leds[display][race]
 
 def getWinningParty(election,race):
-    return "left"
+    if race is "president":
+        race="popularVote"
+    # print("checking race ",race," in ",election)
+    winningVotes=0
+    winner="nobody"
+    multipleWinners=[]
+    if race in election["votes"]:
+
+        for party, count in election["votes"][race].items():
+            if count > winningVotes:
+                winningVotes=count
+                winner=party
+                multipleWinners=[]
+            elif count==winningVotes:
+                if(len(multipleWinners)==0):
+                    multipleWinners=[winner]
+                multipleWinners.extend([party])
+    # print("winner is ",winner)
+    if (len(multipleWinners) > 0) :
+        return multipleWinners
+    return winner
+
+def averageColors(colors):
+    if any(isinstance(el, list) for el in colors):
+        return [sum(e)/len(colors) for e in zip(*colors)]
+    return colors
+
 
 OUTPUT = 1
 INPUT = 0
@@ -599,11 +758,15 @@ while True:
     if (changed):
         changed=False
         doSensorCompensation()
+        print(compensations)
         processCompensations()
+        print(compensation)
         for year in displayMappings.keys():
+            if year is not 2016:
+                generateElection(year)
+
             displayElection(year)
 
-        print(str(compensation))
 
 
     while (DEBUG_LEDs):
