@@ -174,12 +174,12 @@ def findRatio(year, race):
     ratio = {}
     sourceYear = year
 
-    while race is not in elections[sourceYear]["votes"] or count(elections[sourceYear]["votes"][race].keys) > 1:
+    while race is not in elections[sourceYear]["votes"] or count(elections[sourceYear]["votes"][race].keys()) > 1:
         currentYearIndex = currentYearIndex - 1
         sourceYear = years[currentYearIndex]
 
     eligibleVoters = elections[sourceYear]["eligibleVoters"][race]
-    for party in elections[sourceYear]["votes"][race].keys:
+    for party in elections[sourceYear]["votes"][race].keys():
         ratio[party] = elections[sourceYear]["votes"][race][party] / eligibleVoters
 
     elections[year]["ratios"][race] = ratio
