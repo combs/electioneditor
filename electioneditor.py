@@ -168,6 +168,32 @@ def processCompensations():
             divisor = divisor + factor[1]
         compensation[party] = total / divisor
 
+def findRatio(year, race):
+    global compensation,compensations,elections
+    currentYearIndex = years.index(year)
+    ratio = {}
+    sourceYear = year
+
+    while race is not in elections[sourceYear]["votes"] or count(elections[sourceYear]["votes"][race].keys) > 1:
+        currentYearIndex = currentYearIndex - 1
+        sourceYear = years[currentYearIndex]
+
+    eligibleVoters = elections[sourceYear]["eligibleVoters"][race]
+    for party in elections[sourceYear]["votes"][race].keys:
+        ratio[party] = elections[sourceYear]["votes"][race][party] / eligibleVoters
+
+    elections[year]["ratios"][race] = ratio
+
+    return ratio
+
+
+def applyRatio(year,race):
+    eligibleVoters = elections[year]["eligibleVoters"][race]
+    ratio = elections[year]["ratios"][race]
+    for party in ratio.keys:
+        elections[year]["votes"][party] = ratio[party] / eligibleVoters
+
+
 def generateElection(year):
     races=elections[year]["races"]
     for race in races:
@@ -183,11 +209,19 @@ def generateElection(year):
         if race in elections[year]["eligibleVoters"]:
             pop = elections[year]["eligibleVoters"][race]
             total=sum(compensation.values())
+
+            # uncompensatedVotes = elections[year]["votes"][race]
+            ratio = findRatio(year,race)
+
             # print("Total voters in ",race,"is",pop)
             elections[year]["votes"][race] = {}
+
+            applyRatio(year,race)
+
             for party in compensation.keys():
                 print("Compensation for",party,"is",compensation[party],"out of",total,"or",(compensation[party] / total)*100,"%")
-                elections[year]["votes"][race][party] = (compensation[party] / total) * pop
+                elections[year]["votes"][race][party] = (compensation[party] / total) * elections[year]["votes"][race][party]
+
         else:
             print("couldn't find race",race,"in ",year,"races")
     print("Here is",year)
